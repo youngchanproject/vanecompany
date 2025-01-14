@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>임대차계약서 챗봇</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+            background-color: white;
+        }
+        h1 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #chat-box {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .bot-message, .user-message {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 5px;
+            word-wrap: break-word;
+        }
+        .bot-message {
+            background-color: #e3f2fd;
+            align-self: flex-start;
+        }
+        .user-message {
+            background-color: #bbdefb;
+            align-self: flex-end;
+        }
+        #user-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        #button-options {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #text-input {
+            margin-top: 10px;
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #send-btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #send-btn:hover {
+            background-color: #218838;
+        }
+        #special-terms-container {
+            display: none;
+            text-align: left;
+            width: 100%;
+        }
+        #recommendations-section {
+            display: none;
+            text-align: left;
+            width: 100%;
+            margin-top: 20px;
+        }
+        #recommendations-section h3 {
+            margin-bottom: 10px;
+        }
+        #recommendations-list h4 {
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        #recommendations-list ul {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>임대차계약서 자동 완성 챗봇</h1>
+        <div id="chat-box">
+            <div class="bot-message">안녕하세요, 임대차계약서 자동 완성 챗봇입니다. 순서에 따라 질문에 하나씩 답해 주세요.</div>
+        </div>
+        <div id="user-input">
+            <div id="button-options">
+                <button id="start-btn">시작하기</button>
+            </div>
+            <input type="text" id="text-input" style="display: none;" placeholder="메시지를 입력하세요">
+            <button id="send-btn" style="display: none;">전송</button>
+        </div>
+        <div id="special-terms-container">
+            <p>특약 사항을 선택해 주세요:</p>
+            <form id="special-terms-form">
+                <label><input type="checkbox" name="special_terms" value="전세 사기 예방"> 전세 사기 예방</label>
+                <label><input type="checkbox" name="special_terms" value="수리와 유지보수"> 수리와 유지보수</label>
+                <label><input type="checkbox" name="special_terms" value="시설물 사용"> 시설물 사용</label>
+                <label><input type="checkbox" name="special_terms" value="임대료 연체"> 임대료 연체</label>
+                <label><input type="checkbox" name="special_terms" value="중도 해지"> 중도 해지</label>
+                <label><input type="checkbox" name="special_terms" value="시설 변경"> 시설 변경</label>
+                <label><input type="checkbox" name="special_terms" value="애완동물 및 흡연"> 애완동물 및 흡연</label>
+                <label><input type="checkbox" name="special_terms" value="보증금 반환 조건"> 보증금 반환 조건</label>
+                <label><input type="checkbox" name="special_terms" value="화재 및 안전"> 화재 및 안전</label>
+                <label><input type="checkbox" name="special_terms" value="관리비 및 공과금"> 관리비 및 공과금</label>
+                <label><input type="checkbox" name="special_terms" value="계약 갱신"> 계약 갱신</label>
+                <button type="button" id="submit-special-terms">확인</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function splitTextIntoParts(fullText) {
+            const headIndex = fullText.indexOf("1.");
+            const item2Index = fullText.indexOf("2.");
+
+            const head = fullText.slice(0, headIndex).trim();
+            const item1 = fullText.slice(headIndex, item2Index).trim();
+            const item2 = fullText.slice(item2Index).trim();
+
+            return { head, item1, item2 };
+        }
+
+        function appendMessage(content, sender = "bot") {
+            const messageDiv = $(`<div class="${sender}-message"></div>`);
+            if (content === "---") {
+                messageDiv.css({
+                    "border-bottom": "1px solid #ccc",
+                    "margin": "10px 0",
+                    "width": "100%"
+                });
+                messageDiv.html("&nbsp;");
+            } else {
+                messageDiv.text(content);
+            }
+
+            $("#chat-box").append(messageDiv);
+            $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+        }
+
+        function appendMessageWithCheckbox(content, sender = "bot", term = "", itemKey = "") {
+            const messageDiv = $(`<div class="${sender}-message"></div>`);
+            const checkboxId = `${term}-${itemKey}`;
+            const checkbox = $(`<input type="checkbox" id="${checkboxId}" name="selected_recommendations" value="${content}">`);
+            const label = $(`<label for="${checkboxId}">${content}</label>`);
+            messageDiv.append(label, checkbox);
+            $("#chat-box").append(messageDiv);
+            $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+        }
+
+        function displayRecommendations(message, recommendations) {
+            appendMessage(message, "bot");
+
+            for (const term in recommendations) {
+                const recommendation = recommendations[term];
+
+                appendMessage(`[${term}] 관련 특약사항`, "bot");
+
+                if (recommendation.head) {
+                    appendMessage(recommendation.head, "bot");
+                }
+
+                if (recommendation.item1) {
+                    appendMessageWithCheckbox(recommendation.item1, "bot", term, "item1");
+                }
+
+                if (recommendation.item2) {
+                    appendMessageWithCheckbox(recommendation.item2, "bot", term, "item2");
+                }
+
+                appendMessage("---", "bot");
+            }
+
+            appendMessage("특약사항을 모두 선택하셨다면 '확인' 버튼을 눌러주세요.", "bot");
+
+            const confirmButton = $('<button>확인</button>');
+            confirmButton.on('click', () => {
+                const selectedTerms = [];
+                $("input[name='selected_recommendations']:checked").each(function () {
+                    selectedTerms.push($(this).val());
+                });
+
+                $.ajax({
+                    url: "/finalize_terms",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ selected_terms: selectedTerms }),
+                    success: function (data) {
+                        appendMessage("선택하신 특약사항이 계약서에 반영되었습니다. 계약서를 다운로드할 수 있습니다.", "bot");
+                        const downloadButton = $('<button>계약서 다운로드</button>');
+                        downloadButton.on('click', () => {
+                            window.location.href = '/download/완성된_임대차계약서.docx';
+                        });
+                        $("#chat-box").append(downloadButton);
+                    },
+                    error: function () {
+                        alert("특약사항 반영 중 오류가 발생했습니다. 다시 시도해주세요.");
+                    }
+                });
+            });
+            $("#chat-box").append(confirmButton);
+        }
+
+        $("#start-btn").on("click", () => {
+            $("#start-btn").hide();
+            sendMessage("시작");
+        });
+
+        $("#send-btn").on("click", () => {
+            const message = $("#text-input").val();
+            $("#text-input").val("");
+            sendMessage(message);
+        });
+
+        $("#text-input").on("keypress", function(e) {
+            if (e.which == 13) {
+                $("#send-btn").click();
+            }
+        });
+
+        $("#submit-special-terms").on("click", function () {
+            const selectedTerms = [];
+            $("input[name='special_terms']:checked").each(function () {
+                selectedTerms.push($(this).val());
+            });
+
+            if (selectedTerms.length === 0) {
+                alert("특약 사항 유형을 선택해주세요.");
+                return;
+            }
+
+            $.ajax({
+                url: "/special_terms",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ selected_terms: selectedTerms }),
+                success: function (data) {
+                    const { message, recommendations } = data;
+                    displayRecommendations(message, recommendations);
+                },
+                error: function () {
+                    alert("추천 항목을 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.");
+                }
+            });
+        });
+
+        function sendMessage(message) {
+            appendMessage(message, "user");
+            $.ajax({
+                url: "/chat",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ message }),
+                success: function (data) {
+                    const { response, options, next_step } = data;
+                    appendMessage(response);
+
+                    const buttonContainer = $("#button-options");
+                    buttonContainer.empty();
+
+                    if (options) {
+                        options.forEach(option => {
+                            const button = $(`<button>${option}</button>`);
+                            button.on("click", () => sendMessage(option));
+                            buttonContainer.append(button);
+                        });
+                        $("#text-input, #send-btn").hide();
+                    } else {
+                        $("#text-input, #send-btn").show();
+                    }
+
+                    if (next_step === "special_terms") {
+                        $("#user-input").hide();
+                        $("#special-terms-container").show();
+                    }
+                },
+                error: function () {
+                    alert("오류가 발생했습니다. 다시 시도해주세요.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+    "responses": {
+        "user_name": "최영찬",
+        "location": "서울특별시",
+        "deposit": "1000000",
+        "monthly_rent": "300000"
+    },
+    "user_type": "임대인",
+    "contract_type": "월세"
+}
